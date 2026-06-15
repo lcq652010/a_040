@@ -14,6 +14,7 @@ from config import (
     FEATURE_COLUMNS,
     DEVICE_TYPES,
     DEVICE_IDS,
+    DEVICE_TYPE_MAP,
     NORMAL_RANGES,
     STEPS_PER_HOUR,
     STEPS_PER_MINUTE,

@@ -136,7 +136,7 @@ const generateMockDeviceData = (deviceId, limit) => {
 }
 
 const baseOffset = (deviceId) => {
-  const map = { 'DEVV-001':00, DEVEV-202'88, DEVEV-303'3 3,DE'DEV4004'8 18DEV'DE5-005': 5 }
+  const map = { 'AC-001': 0, 'CP-001': 5, 'FN-001': 10, 'CV-001': 8, 'CT-001': 3 }
   return map[deviceId] || 0
 }
 

@@ -1,0 +1,242 @@
+﻿docker :  Image influxdb:2.7-alpine Pulling 
+所在位置 行:1 字符: 36
++ ... d:\AA_solo\solo_0601\a_040; docker compose up -d --build 2>&1 | Out-F ...
++                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( Image influxdb:2.7-alpine Pulling 
+    :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ e3888ed0a40f Pulling fs layer 0B
+ 92773172bd5e Pulling fs layer 0B
+ 110f10ce33ca Pulling fs layer 0B
+ ff3061cdb521 Pulling fs layer 0B
+ 5a4d3018750d Pulling fs layer 0B
+ b49541ca3fe8 Pulling fs layer 0B
+ dead83f683dc Pulling fs layer 0B
+ 0639536a1a06 Pulling fs layer 0B
+ Image influxdb:2.7-alpine Pulled 
+ Image phm-system-root-cause-service Building 
+ Image phm-system-cloud-backend Building 
+ Image phm-system-edge-node Building 
+ Image phm-system-frontend Building 
+ Image phm-system-lstm-service Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 2.50kB 0.0s done
+#1 DONE 0.0s
+
+#2 [edge-node internal] load build definition from Dockerfile
+#2 transferring dockerfile: 198B done
+#2 DONE 0.1s
+
+#3 [root-cause-service internal] load build definition from Dockerfile
+#3 transferring dockerfile: 317B done
+#3 DONE 0.1s
+
+#4 [lstm-service internal] load build definition from Dockerfile
+#4 transferring dockerfile: 319B done
+#4 DONE 0.1s
+
+#5 [cloud-backend internal] load build definition from Dockerfile
+#5 transferring dockerfile: 367B done
+#5 DONE 0.1s
+
+#6 [frontend internal] load build definition from Dockerfile
+#6 transferring dockerfile: 337B done
+#6 DONE 0.1s
+
+#7 [lstm-service internal] load metadata for docker.io/library/python:3.11-slim
+#7 ...
+
+#8 [frontend internal] load metadata for docker.io/library/nginx:alpine
+#8 DONE 0.6s
+
+#9 [frontend internal] load metadata for docker.io/library/node:20-alpine
+#9 ...
+
+#10 [cloud-backend internal] load metadata for docker.io/library/alpine:3.19
+#10 DONE 0.8s
+
+#7 [edge-node internal] load metadata for docker.io/library/python:3.11-slim
+#7 DONE 0.9s
+
+#11 [lstm-service internal] load .dockerignore
+#11 transferring context:
+#11 transferring context: 2B done
+#11 DONE 0.1s
+
+#12 [root-cause-service 1/6] FROM docker.io/library/python:3.11-slim@sha256:ae52c5bef62a6bdd42cd1e8dffef86b9cd284bde9427da79839de7a4b983e7ca
+#12 resolve docker.io/library/python:3.11-slim@sha256:ae52c5bef62a6bdd42cd1e8dffef86b9cd284bde9427da79839de7a4b983e7ca 0.0s done
+#12 CACHED
+
+#13 [edge-node 2/5] WORKDIR /app
+#13 DONE 0.0s
+
+#14 [edge-node internal] load .dockerignore
+#14 transferring context: 2B done
+#14 DONE 0.1s
+
+#15 [root-cause-service internal] load .dockerignore
+#15 transferring context: 2B done
+#15 DONE 0.1s
+
+#16 [root-cause-service 2/6] RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+#16 1.697 Hit:1 http://deb.debian.org/debian trixie InRelease
+#16 1.897 Get:2 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+#16 2.404 Get:3 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
+#16 3.194 Get:4 http://deb.debian.org/debian trixie/main amd64 Packages [9671 kB]
+#16 ...
+
+#17 [lstm-service internal] load build context
+#17 transferring context: 80.19kB 0.0s done
+#17 DONE 0.1s
+
+#18 [edge-node internal] load build context
+#18 ...
+
+#19 [root-cause-service internal] load build context
+#19 transferring context: 96.08kB 0.1s done
+#19 DONE 0.3s
+
+#18 [edge-node internal] load build context
+#18 transferring context: 3.12MB 0.5s done
+#18 DONE 0.5s
+
+#20 [edge-node 3/5] COPY requirements.txt .
+#20 DONE 0.0s
+
+#21 [edge-node 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#21 2.540 Collecting requests>=2.31.0 (from -r requirements.txt (line 1))
+#21 2.862   Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+#21 4.324 Collecting numpy>=1.24.0 (from -r requirements.txt (line 2))
+#21 4.427   Downloading numpy-2.4.6-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (6.6 kB)
+#21 5.783 Collecting scikit-learn>=1.3.0 (from -r requirements.txt (line 3))
+#21 5.896   Downloading scikit_learn-1.9.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (11 kB)
+#21 9.365 Collecting scipy>=1.11.0 (from -r requirements.txt (line 4))
+#21 9.475   Downloading scipy-1.17.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+#21 9.703      鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹?62.1/62.1 kB 240.3 kB/s eta 0:00:00
+#21 10.44 Collecting joblib>=1.3.0 (from -r requirements.txt (line 5))
+#21 10.55   Downloading joblib-1.5.3-py3-none-any.whl.metadata (5.5 kB)
+#21 ...
+
+#9 [frontend internal] load metadata for docker.io/library/node:20-alpine
+#9 DONE 2.6s
+
+#22 [frontend internal] load .dockerignore
+#22 transferring context: 2B done
+#22 DONE 0.0s
+
+#23 [frontend stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:8b1e78743a03dbb2c95171cc58639fef29abc8816598e27fb910ed2e621e589a
+#23 resolve docker.io/library/nginx:alpine@sha256:8b1e78743a03dbb2c95171cc58639fef29abc8816598e27fb910ed2e621e589a 0.0s done
+#23 CACHED
+
+#24 [frontend builder 1/6] FROM docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
+#24 resolve docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 0.0s done
+#24 sha256:fff4e2c1b189bf87d63ad8bd07f7f4eb288d6f2b6a07a8bb44c60e8c075d2096 0B / 445B 0.2s
+#24 sha256:b2cbbfe903b0821005780971ddc5892edcc4ce74c5a48d82e1d2b382edac3122 0B / 1.26MB 0.2s
+#24 sha256:4feea04c154301db6f4a496efa397b3db96603b1c009c797cfdde77bea8b3287 0B / 43.23MB 0.2s
+#24 ...
+
+#25 [cloud-backend internal] load metadata for docker.io/library/golang:1.21-alpine
+#25 DONE 3.2s
+
+#26 [cloud-backend internal] load .dockerignore
+#26 transferring context: 2B done
+#26 DONE 0.0s
+
+#27 [cloud-backend builder 1/6] FROM docker.io/library/golang:1.21-alpine@sha256:2414035b086e3c42b99654c8b26e6f5b1b1598080d65fd03c7f499552ff4dc94
+#27 resolve docker.io/library/golang:1.21-alpine@sha256:2414035b086e3c42b99654c8b26e6f5b1b1598080d65fd03c7f499552ff4dc94 0.0s done
+#27 DONE 0.0s
+
+#28 [cloud-backend internal] load build context
+#28 transferring context: 504B done
+#28 DONE 0.0s
+
+#29 [cloud-backend builder 3/6] COPY go.mod ./
+#29 CACHED
+
+#30 [cloud-backend builder 4/6] RUN go mod tidy
+#30 CACHED
+
+#31 [cloud-backend builder 2/6] WORKDIR /app
+#31 CACHED
+
+#32 [cloud-backend builder 5/6] COPY . .
+#32 CACHED
+
+#24 [frontend builder 1/6] FROM docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
+#24 ...
+
+#33 [cloud-backend builder 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o cloud-backend .
+#33 0.378 main.go:14:2: missing go.sum entry for module providing package github.com/gin-gonic/gin (imported by phm-system/cloud-backend); to add:
+#33 0.378 	go get phm-system/cloud-backend
+#33 0.378 config/config.go:7:2: missing go.sum entry for module providing package github.com/joho/godotenv (imported by phm-system/cloud-backend/config); to add:
+#33 0.378 	go get phm-system/cloud-backend/config
+#33 0.378 services/websocket_service.go:11:2: missing go.sum entry for module providing package github.com/gorilla/websocket (imported by phm-system/cloud-backend/services); to add:
+#33 0.378 	go get phm-system/cloud-backend/services
+#33 0.378 services/influxdb_service.go:8:2: missing go.sum entry for module providing package github.com/influxdata/influxdb-client-go/v2 (imported by phm-system/cloud-backend/services); to add:
+#33 0.378 	go get phm-system/cloud-backend/services
+#33 0.378 services/influxdb_service.go:9:2: missing go.sum entry for module providing package github.com/influxdata/influxdb-client-go/v2/api (imported by phm-system/cloud-backend/services); to add:
+#33 0.378 	go get phm-system/cloud-backend/services
+#33 0.378 services/influxdb_service.go:10:2: missing go.sum entry for module providing package github.com/influxdata/influxdb-client-go/v2/api/write (imported by phm-system/cloud-backend/services); to add:
+#33 0.378 	go get phm-system/cloud-backend/services
+#33 0.378 services/influxdb_service.go:11:2: missing go.sum entry for module providing package github.com/influxdata/influxdb-client-go/v2/domain (imported by phm-system/cloud-backend/services); to add:
+#33 0.378 	go get phm-system/cloud-backend/services
+#33 ERROR: process "/bin/sh -c CGO_ENABLED=0 GOOS=linux go build -o cloud-backend ." did not complete successfully: exit code: 1
+
+#34 [cloud-backend stage-1 1/4] FROM docker.io/library/alpine:3.19@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1
+#34 resolve docker.io/library/alpine:3.19@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1 0.0s done
+#34 sha256:17a39c0ba978cc27001e9c56a480f98106e1ab74bd56eb302f9fd4cf758ea43f 0B / 3.42MB 0.5s
+#34 ...
+
+#16 [root-cause-service 2/6] RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+#16 CANCELED
+
+#21 [edge-node 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#21 CANCELED
+
+#24 [frontend builder 1/6] FROM docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
+#24 DONE 1.2s
+
+#35 [frontend internal] load build context
+#35 transferring context: 8.97MB 1.2s done
+#35 CANCELED
+
+#36 [frontend builder 2/6] WORKDIR /app
+#36 CANCELED
+------
+ > [cloud-backend builder 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o cloud-backend .:
+0.378 services/websocket_service.go:11:2: missing go.sum entry for module providing package github.com/gorilla/websocket (imported by phm-system/cloud-backend/services); to add:
+0.378 	go get phm-system/cloud-backend/services
+0.378 services/influxdb_service.go:8:2: missing go.sum entry for module providing package github.com/influxdata/influxdb-client-go/v2 (imported by phm-system/cloud-backend/services); to add:
+0.378 	go get phm-system/cloud-backend/services
+0.378 services/influxdb_service.go:9:2: missing go.sum entry for module providing package github.com/influxdata/influxdb-client-go/v2/api (imported by phm-system/cloud-backend/services); to add:
+0.378 	go get phm-system/cloud-backend/services
+0.378 services/influxdb_service.go:10:2: missing go.sum entry for module providing package github.com/influxdata/influxdb-client-go/v2/api/write (imported by phm-system/cloud-backend/services); to add:
+0.378 	go get phm-system/cloud-backend/services
+0.378 services/influxdb_service.go:11:2: missing go.sum entry for module providing package github.com/influxdata/influxdb-client-go/v2/domain (imported by phm-system/cloud-backend/services); to add:
+0.378 	go get phm-system/cloud-backend/services
+------
+Dockerfile:10
+
+--------------------
+
+   8 |     COPY . .
+
+   9 |     
+
+  10 | >>> RUN CGO_ENABLED=0 GOOS=linux go build -o cloud-backend .
+
+  11 |     
+
+  12 |     FROM alpine:3.19
+
+--------------------
+
+target cloud-backend: failed to solve: process "/bin/sh -c CGO_ENABLED=0 GOOS=li
+nux go build -o cloud-backend ." did not complete successfully: exit code: 1
+
+
+
+View build details: docker-desktop://dashboard/build/default/default/ytilc2tcvb7
+c64bkoa2bc71cu
+

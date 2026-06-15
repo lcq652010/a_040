@@ -55,23 +55,23 @@ SERVICES = {
 DEVICES = [
     {"id": "AC-001", "type": "air_compressor", "ranges": {
         "vibration": (2.0, 5.0), "temperature": (55.0, 75.0),
-        "current": (15.0, 25.0), "speed": (2800.0, 3000.0), "acoustic_emission": (65.0, 85.0),
+        "current": (15.0, 25.0), "speed": (2800.0, 3000.0), "acoustic": (65.0, 85.0),
     }},
     {"id": "CP-001", "type": "centrifugal_pump", "ranges": {
         "vibration": (1.0, 3.5), "temperature": (40.0, 60.0),
-        "current": (10.0, 18.0), "speed": (1450.0, 1500.0), "acoustic_emission": (55.0, 75.0),
+        "current": (10.0, 18.0), "speed": (1450.0, 1500.0), "acoustic": (55.0, 75.0),
     }},
     {"id": "FN-001", "type": "fan", "ranges": {
         "vibration": (1.5, 4.0), "temperature": (45.0, 65.0),
-        "current": (8.0, 15.0), "speed": (960.0, 1000.0), "acoustic_emission": (60.0, 80.0),
+        "current": (8.0, 15.0), "speed": (960.0, 1000.0), "acoustic": (60.0, 80.0),
     }},
     {"id": "CV-001", "type": "conveyor", "ranges": {
         "vibration": (0.5, 2.5), "temperature": (35.0, 55.0),
-        "current": (5.0, 12.0), "speed": (60.0, 80.0), "acoustic_emission": (50.0, 70.0),
+        "current": (5.0, 12.0), "speed": (60.0, 80.0), "acoustic": (50.0, 70.0),
     }},
     {"id": "CT-001", "type": "cooling_tower", "ranges": {
         "vibration": (0.8, 2.8), "temperature": (28.0, 42.0),
-        "current": (12.0, 20.0), "speed": (720.0, 750.0), "acoustic_emission": (52.0, 72.0),
+        "current": (12.0, 20.0), "speed": (720.0, 750.0), "acoustic": (52.0, 72.0),
     }},
 ]
 

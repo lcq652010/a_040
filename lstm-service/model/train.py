@@ -71,9 +71,14 @@ def compute_scaler_params(
     train_features: np.ndarray,
     train_targets: np.ndarray,
 ) -> Dict[str, np.ndarray]:
+    if train_features.ndim == 3:
+        flat_features = train_features.reshape(-1, train_features.shape[-1])
+    else:
+        flat_features = train_features
+
     return {
-        "feature_means": train_features.mean(axis=(0, 1)).tolist(),
-        "feature_stds": (train_features.std(axis=(0, 1)) + 1e-8).tolist(),
+        "feature_means": flat_features.mean(axis=0).tolist(),
+        "feature_stds": (flat_features.std(axis=0) + 1e-8).tolist(),
         "target_mean": float(train_targets.mean()),
         "target_std": float(train_targets.std() + 1e-8),
     }
@@ -121,10 +126,7 @@ def train_single_device(
     test_features = test_df[FEATURE_COLUMNS].values.astype(np.float32)
     test_targets = test_df[TARGET_COLUMN].values.astype(np.float32)
 
-    scaler_params = compute_scaler_params(
-        features.reshape(1, -1, len(FEATURE_COLUMNS)),
-        targets,
-    )
+    scaler_params = compute_scaler_params(train_features, train_targets)
 
     X_train, y_train = create_sequences(train_features, train_targets, WINDOW_SIZE, step=5)
     X_test, y_test = create_sequences(test_features, test_targets, WINDOW_SIZE, step=1)
@@ -153,13 +155,15 @@ def train_single_device(
     return model, history
 
 
-def _prepare_device_data(df: pd.DataFrame, scaler_params: dict):
+def _prepare_device_data(df: pd.DataFrame):
     train_df, test_df = split_train_test(df, test_size=0.2)
 
     train_features = train_df[FEATURE_COLUMNS].values.astype(np.float32)
     train_targets = train_df[TARGET_COLUMN].values.astype(np.float32)
     test_features = test_df[FEATURE_COLUMNS].values.astype(np.float32)
     test_targets = test_df[TARGET_COLUMN].values.astype(np.float32)
+
+    scaler_params = compute_scaler_params(train_features, train_targets)
 
     X_train, y_train = create_sequences(train_features, train_targets, WINDOW_SIZE, step=5)
     X_test, y_test = create_sequences(test_features, test_targets, WINDOW_SIZE, step=1)
@@ -201,19 +205,16 @@ def train_with_transfer_learning():
     all_features = np.concatenate(all_features_list, axis=0)
     all_targets = np.concatenate(all_targets_list, axis=0)
 
-    base_scaler_params = compute_scaler_params(
-        all_features.reshape(1, -1, len(FEATURE_COLUMNS)),
-        all_targets,
-    )
-
-    base_model = PHM_LSTM_Model(device_id="base_model")
-    base_model.create_model()
-
     split_idx = int(len(all_features) * 0.8)
     train_features = all_features[:split_idx]
     train_targets = all_targets[:split_idx]
     test_features = all_features[split_idx:]
     test_targets = all_targets[split_idx:]
+
+    base_scaler_params = compute_scaler_params(train_features, train_targets)
+
+    base_model = PHM_LSTM_Model(device_id="base_model")
+    base_model.create_model()
 
     X_train, y_train = create_sequences(train_features, train_targets, WINDOW_SIZE, step=5)
     X_test, y_test = create_sequences(test_features, test_targets, WINDOW_SIZE, step=5)
@@ -257,15 +258,7 @@ def train_with_transfer_learning():
             print(f"  警告: {device_id} 加载基础模型失败，跳过微调")
             continue
 
-        features = df[FEATURE_COLUMNS].values.astype(np.float32)
-        targets = df[TARGET_COLUMN].values.astype(np.float32)
-
-        device_scaler_params = compute_scaler_params(
-            features.reshape(1, -1, len(FEATURE_COLUMNS)),
-            targets,
-        )
-
-        X_tr, y_tr, X_val, y_val, device_scaler_params = _prepare_device_data(df, device_scaler_params)
+        X_tr, y_tr, X_val, y_val, device_scaler_params = _prepare_device_data(df)
 
         print(f"  训练序列数: {len(X_tr)} | 验证序列数: {len(X_val)}")
         print(f"  微调 epochs=30, learning_rate=0.0001")

@@ -112,7 +112,7 @@ def analyze_root_cause():
         "centrifugal_pump": "pump",
         "fan": "fan",
         "conveyor": "conveyor",
-        "cooling_tower": "motor",
+        "cooling_tower": "fan",
         "compressor": "compressor",
         "pump": "pump",
         "motor": "motor",
