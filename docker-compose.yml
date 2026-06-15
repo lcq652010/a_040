@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: phm-influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=phm-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=phm-data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-secret-token-phm-2024
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    networks:
+      - phm-network
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  lstm-service:
+    build:
+      context: ./lstm-service
+      dockerfile: Dockerfile
+    container_name: phm-lstm-service
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - lstm-models:/app/models
+      - lstm-data:/app/data/history
+    environment:
+      - FLASK_ENV=production
+      - MODEL_PATH=./models/
+      - DATA_PATH=./data/history/
+    depends_on:
+      - influxdb
+    networks:
+      - phm-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  root-cause-service:
+    build:
+      context: ./root-cause-service
+      dockerfile: Dockerfile
+    container_name: phm-root-cause-service
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+    depends_on:
+      - influxdb
+    networks:
+      - phm-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  cloud-backend:
+    build:
+      context: ./cloud-backend
+      dockerfile: Dockerfile
+    container_name: phm-cloud-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=my-secret-token-phm-2024
+      - INFLUXDB_ORG=phm-org
+      - INFLUXDB_BUCKET=phm-data
+      - LSTM_SERVICE_URL=http://lstm-service:5000
+      - ROOT_CAUSE_SERVICE_URL=http://root-cause-service:5001
+      - SERVER_PORT=8080
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      lstm-service:
+        condition: service_healthy
+      root-cause-service:
+        condition: service_healthy
+    networks:
+      - phm-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  edge-node:
+    build:
+      context: ./edge-node
+      dockerfile: Dockerfile
+    container_name: phm-edge-node
+    restart: unless-stopped
+    environment:
+      - CLOUD_BACKEND_URL=http://cloud-backend:8080/api/data
+      - COLLECTION_INTERVAL=10
+    depends_on:
+      cloud-backend:
+        condition: service_healthy
+    networks:
+      - phm-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: phm-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - cloud-backend
+    networks:
+      - phm-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  influxdb-data:
+    driver: local
+  influxdb-config:
+    driver: local
+  lstm-models:
+    driver: local
+  lstm-data:
+    driver: local
+
+networks:
+  phm-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
