@@ -42,6 +42,13 @@ type RootCauseResult struct {
 	Timestamp   time.Time       `json:"timestamp"`
 }
 
+type BatchWebSocketMessage struct {
+	Type      string                   `json:"type"`
+	Items     []map[string]interface{} `json:"items"`
+	Count     int                      `json:"count"`
+	Timestamp time.Time                `json:"timestamp"`
+}
+
 type WebSocketMessage struct {
 	Type      string      `json:"type"`
 	Data      interface{} `json:"data"`

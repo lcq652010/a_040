@@ -21,6 +21,10 @@ from config import (
     WINDOW_SIZE,
     STEPS_PER_HOUR,
     STEPS_PER_MINUTE,
+    BASE_MODEL_PATH,
+    FINE_TUNE_EPOCHS,
+    FINE_TUNE_LEARNING_RATE,
+    FINE_TUNE_LAYERS,
 )
 
 
@@ -263,3 +267,141 @@ class PHM_LSTM_Model:
 
     def is_trained(self) -> bool:
         return os.path.exists(self.model_path) and os.path.exists(self.config_path)
+
+    def save_base_model(self, path: str = BASE_MODEL_PATH):
+        if self.model is None:
+            raise ValueError("No model to save as base model.")
+
+        os.makedirs(path, exist_ok=True)
+        model_file = os.path.join(path, "base_model.h5")
+        config_file = os.path.join(path, "base_config.json")
+
+        self.model.save(model_file)
+
+        config_data = {
+            "device_id": "base_model",
+            "input_dim": self.input_dim,
+            "window_size": self.window_size,
+            "units": self.units,
+            "layers": self.layers,
+            "dropout_rate": self.dropout_rate,
+            "scaler_params": self.scaler_params,
+        }
+        with open(config_file, "w") as f:
+            json.dump(config_data, f, indent=2, default=float)
+
+        print(f"[Base Model] 基础模型已保存: {path}")
+
+    def load_base_model(self, path: str = BASE_MODEL_PATH) -> bool:
+        model_file = os.path.join(path, "base_model.h5")
+        config_file = os.path.join(path, "base_config.json")
+
+        if not os.path.exists(model_file) or not os.path.exists(config_file):
+            return False
+
+        try:
+            self.model = load_model(model_file)
+
+            with open(config_file, "r") as f:
+                config_data = json.load(f)
+
+            self.scaler_params = config_data.get("scaler_params")
+            self.window_size = config_data.get("window_size", self.window_size)
+            self.input_dim = config_data.get("input_dim", self.input_dim)
+
+            print(f"[{self.device_id}] 基础模型加载成功")
+            return True
+        except Exception as e:
+            print(f"[{self.device_id}] 加载基础模型失败: {e}")
+            return False
+
+    def _freeze_layers(self, trainable_layers: int = FINE_TUNE_LAYERS):
+        if self.model is None:
+            raise ValueError("No model to freeze layers.")
+
+        all_layers = self.model.layers
+        total_layers = len(all_layers)
+        freeze_count = max(0, total_layers + trainable_layers)
+
+        for i, layer in enumerate(all_layers):
+            if i < freeze_count:
+                layer.trainable = False
+            else:
+                layer.trainable = True
+
+        print(f"[{self.device_id}] 冻结前 {freeze_count} 层，解冻后 {total_layers - freeze_count} 层")
+        for i, layer in enumerate(all_layers):
+            status = "trainable" if layer.trainable else "frozen"
+            print(f"  Layer {i}: {layer.name} -> {status}")
+
+    def fine_tune(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        X_val: np.ndarray = None,
+        y_val: np.ndarray = None,
+        scaler_params: dict = None,
+        epochs: int = FINE_TUNE_EPOCHS,
+        learning_rate: float = FINE_TUNE_LEARNING_RATE,
+    ) -> dict:
+        if self.model is None:
+            raise ValueError("请先加载基础模型再进行微调。")
+
+        self._freeze_layers(FINE_TUNE_LAYERS)
+
+        optimizer = Adam(learning_rate=learning_rate, clipnorm=1.0)
+        self.model.compile(
+            optimizer=optimizer,
+            loss="mean_squared_error",
+            metrics=["mean_absolute_error", "mape"],
+        )
+
+        if scaler_params is not None:
+            self.scaler_params = scaler_params
+
+        callbacks = [
+            EarlyStopping(
+                monitor="val_loss" if X_val is not None else "loss",
+                patience=10,
+                restore_best_weights=True,
+                verbose=1,
+                min_delta=1e-4,
+            ),
+            ReduceLROnPlateau(
+                monitor="val_loss" if X_val is not None else "loss",
+                factor=0.5,
+                patience=5,
+                min_lr=1e-7,
+                verbose=1,
+            ),
+        ]
+
+        if X_val is not None and y_val is not None:
+            validation_data = (X_val, y_val)
+        else:
+            validation_data = None
+
+        trainable_count = sum(tf.keras.backend.count_params(w) for w in self.model.trainable_weights)
+        frozen_count = sum(tf.keras.backend.count_params(w) for w in self.model.non_trainable_weights)
+        print(f"[{self.device_id}] 微调开始: trainable_params={trainable_count}, frozen_params={frozen_count}")
+
+        history = self.model.fit(
+            X_train,
+            y_train,
+            epochs=epochs,
+            batch_size=self.batch_size,
+            validation_data=validation_data,
+            validation_split=self.validation_split if validation_data is None else 0.0,
+            callbacks=callbacks,
+            shuffle=True,
+            verbose=1,
+        )
+
+        self.save_model()
+
+        return {
+            "loss": history.history["loss"],
+            "val_loss": history.history.get("val_loss", []),
+            "mae": history.history.get("mean_absolute_error", []),
+            "val_mae": history.history.get("val_mean_absolute_error", []),
+        }

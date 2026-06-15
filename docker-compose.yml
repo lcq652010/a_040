@@ -113,6 +113,9 @@ services:
     environment:
       - CLOUD_BACKEND_URL=http://cloud-backend:8080/api/data
       - COLLECTION_INTERVAL=10
+      - INCREMENTAL_UPDATE_INTERVAL=100
+    volumes:
+      - edge-models:/app/saved_models
     depends_on:
       cloud-backend:
         condition: service_healthy
@@ -150,6 +153,8 @@ volumes:
   lstm-models:
     driver: local
   lstm-data:
+    driver: local
+  edge-models:
     driver: local
 
 networks:

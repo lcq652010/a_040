@@ -27,6 +27,10 @@ lstm-service/models/*.keras
 lstm-service/models/*.json
 lstm-service/data/history/*.csv
 
+edge-node/saved_models/*.joblib
+
+tests/e2e_report.txt
+
 data/
 tmp/
 temp/

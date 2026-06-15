@@ -22,6 +22,19 @@ LSTM_PARAMS = {
     "learning_rate": 0.001,
 }
 
+BASE_MODEL_PATH = os.path.join(BASE_DIR, "models", "base_model")
+FINE_TUNE_EPOCHS = 30
+FINE_TUNE_LEARNING_RATE = 0.0001
+FINE_TUNE_LAYERS = -3
+
+BATHTUB_CONFIG = {
+    "early_failure_ratio": 0.05,
+    "wear_out_ratio": 0.15,
+    "early_failure_hazard": 2.0,
+    "wear_out_hazard": 3.0,
+    "stable_hazard": 0.3,
+}
+
 DEVICE_TYPES = [
     "air_compressor",
     "centrifugal_pump",

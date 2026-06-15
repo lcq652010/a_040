@@ -8,6 +8,10 @@ ANOMALY_INJECTION_PROBABILITY = float(os.getenv("ANOMALY_INJECTION_PROBABILITY",
 
 ANOMALY_THRESHOLD = float(os.getenv("ANOMALY_THRESHOLD", -0.5))
 
+MODEL_SAVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saved_models")
+
+INCREMENTAL_UPDATE_INTERVAL = int(os.getenv("INCREMENTAL_UPDATE_INTERVAL", 100))
+
 DEVICES_CONFIG = {
     "air_compressor": {
         "id": "AC-001",

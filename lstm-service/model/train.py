@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import (
     HISTORY_DATA_PATH,
     MODEL_SAVE_PATH,
+    BASE_MODEL_PATH,
     WINDOW_SIZE,
     FEATURE_COLUMNS,
     TARGET_COLUMN,
@@ -152,6 +153,148 @@ def train_single_device(
     return model, history
 
 
+def _prepare_device_data(df: pd.DataFrame, scaler_params: dict):
+    train_df, test_df = split_train_test(df, test_size=0.2)
+
+    train_features = train_df[FEATURE_COLUMNS].values.astype(np.float32)
+    train_targets = train_df[TARGET_COLUMN].values.astype(np.float32)
+    test_features = test_df[FEATURE_COLUMNS].values.astype(np.float32)
+    test_targets = test_df[TARGET_COLUMN].values.astype(np.float32)
+
+    X_train, y_train = create_sequences(train_features, train_targets, WINDOW_SIZE, step=5)
+    X_test, y_test = create_sequences(test_features, test_targets, WINDOW_SIZE, step=1)
+
+    X_train_scaled, y_train_scaled = apply_scaling(X_train, y_train, scaler_params)
+    X_test_scaled, y_test_scaled = apply_scaling(X_test, y_test, scaler_params)
+
+    return X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled, scaler_params
+
+
+def train_with_transfer_learning():
+    print("=" * 70)
+    print("迁移学习训练流程")
+    print("=" * 70)
+    print()
+
+    device_data = load_history_data()
+
+    if not device_data:
+        print("错误: 无法加载任何设备数据")
+        return
+
+    print(f"\n共发现 {len(device_data)} 台设备数据")
+    print()
+
+    print("-" * 70)
+    print("第一步: 合并所有设备数据训练基础模型 (base_model)")
+    print("-" * 70)
+
+    all_features_list = []
+    all_targets_list = []
+
+    for device_id, df in device_data.items():
+        features = df[FEATURE_COLUMNS].values.astype(np.float32)
+        targets = df[TARGET_COLUMN].values.astype(np.float32)
+        all_features_list.append(features)
+        all_targets_list.append(targets)
+
+    all_features = np.concatenate(all_features_list, axis=0)
+    all_targets = np.concatenate(all_targets_list, axis=0)
+
+    base_scaler_params = compute_scaler_params(
+        all_features.reshape(1, -1, len(FEATURE_COLUMNS)),
+        all_targets,
+    )
+
+    base_model = PHM_LSTM_Model(device_id="base_model")
+    base_model.create_model()
+
+    split_idx = int(len(all_features) * 0.8)
+    train_features = all_features[:split_idx]
+    train_targets = all_targets[:split_idx]
+    test_features = all_features[split_idx:]
+    test_targets = all_targets[split_idx:]
+
+    X_train, y_train = create_sequences(train_features, train_targets, WINDOW_SIZE, step=5)
+    X_test, y_test = create_sequences(test_features, test_targets, WINDOW_SIZE, step=5)
+
+    X_train_scaled, y_train_scaled = apply_scaling(X_train, y_train, base_scaler_params)
+    X_test_scaled, y_test_scaled = apply_scaling(X_test, y_test, base_scaler_params)
+
+    print(f"  合并数据总量: {len(all_features)} 条")
+    print(f"  训练序列数: {len(X_train_scaled)} | 测试序列数: {len(X_test_scaled)}")
+    print(f"  基础模型训练 epochs=50")
+
+    base_model.epochs = 50
+    base_history = base_model.train(
+        X_train=X_train_scaled,
+        y_train=y_train_scaled,
+        X_val=X_test_scaled,
+        y_val=y_test_scaled,
+        scaler_params=base_scaler_params,
+    )
+
+    base_model.save_base_model(BASE_MODEL_PATH)
+
+    if len(base_history.get("loss", [])) > 0:
+        print(f"\n  基础模型训练完成!")
+        print(f"  最终训练 Loss: {base_history['loss'][-1]:.6f}")
+        if base_history.get("val_loss"):
+            print(f"  最终验证 Loss: {base_history['val_loss'][-1]:.6f}")
+
+    print()
+    print("-" * 70)
+    print("第二步: 对每台设备加载基础模型并微调")
+    print("-" * 70)
+
+    fine_tune_results = {}
+    for idx, (device_id, df) in enumerate(device_data.items(), 1):
+        print(f"\n[{idx}/{len(device_data)}] 微调设备 {device_id}...")
+
+        device_model = PHM_LSTM_Model(device_id=device_id)
+
+        if not device_model.load_base_model(BASE_MODEL_PATH):
+            print(f"  警告: {device_id} 加载基础模型失败，跳过微调")
+            continue
+
+        features = df[FEATURE_COLUMNS].values.astype(np.float32)
+        targets = df[TARGET_COLUMN].values.astype(np.float32)
+
+        device_scaler_params = compute_scaler_params(
+            features.reshape(1, -1, len(FEATURE_COLUMNS)),
+            targets,
+        )
+
+        X_tr, y_tr, X_val, y_val, device_scaler_params = _prepare_device_data(df, device_scaler_params)
+
+        print(f"  训练序列数: {len(X_tr)} | 验证序列数: {len(X_val)}")
+        print(f"  微调 epochs=30, learning_rate=0.0001")
+
+        ft_history = device_model.fine_tune(
+            X_train=X_tr,
+            y_train=y_tr,
+            X_val=X_val,
+            y_val=y_val,
+            scaler_params=device_scaler_params,
+        )
+
+        if len(ft_history.get("loss", [])) > 0:
+            print(f"  微调完成! 最终 Loss: {ft_history['loss'][-1]:.6f}")
+            if ft_history.get("val_loss"):
+                print(f"  最终验证 Loss: {ft_history['val_loss'][-1]:.6f}")
+
+        fine_tune_results[device_id] = ft_history
+
+    print("\n" + "=" * 70)
+    print("迁移学习训练流程完成!")
+    print(f"  基础模型已保存: {BASE_MODEL_PATH}")
+    print(f"  已微调设备数: {len(fine_tune_results)}")
+    print(f"  设备模型保存路径: {MODEL_SAVE_PATH}")
+    print("=" * 70)
+
+    return fine_tune_results
+
+
 def main():
     print("=" * 70)
     print("LSTM RUL 预测模型训练流程")
@@ -190,8 +333,8 @@ def ensure_all_models_trained() -> bool:
             break
 
     if not all_trained:
-        print("检测到部分或全部设备模型未训练，启动完整训练流程...")
-        main()
+        print("检测到部分或全部设备模型未训练，启动迁移学习训练流程...")
+        train_with_transfer_learning()
 
     return True
 

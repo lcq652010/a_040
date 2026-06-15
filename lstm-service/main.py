@@ -19,7 +19,7 @@ from config import (
     STEPS_PER_MINUTE,
 )
 from model.lstm_model import PHM_LSTM_Model
-from model.train import ensure_all_models_trained
+from model.train import ensure_all_models_trained, train_with_transfer_learning
 
 
 app = Flask(__name__)
@@ -44,7 +44,12 @@ def initialize_models():
         if model.load_model():
             model_registry[device_id] = model
         else:
-            print(f"  警告: {device_id} 模型加载失败")
+            print(f"  警告: {device_id} 模型加载失败，尝试迁移学习重新训练...")
+            train_with_transfer_learning()
+            if model.load_model():
+                model_registry[device_id] = model
+            else:
+                print(f"  错误: {device_id} 迁移学习后仍无法加载模型")
 
     SERVICE_START_TIME = datetime.now()
 

@@ -290,59 +290,53 @@ const loadAlerts = async () => {
   }
 }
 
-const handleWebSocketMessage = (msg) => {
-  if (!msg || !msg.type) return
-
-  switch (msg.type) {
-    case 'device_update': {
-      const { deviceId, data } = msg
-      if (deviceId && data) {
-        if (deviceDataMap[deviceId]) {
-          const old = deviceDataMap[deviceId]
-          const timestamps = [...old.timestamps.slice(1), data.timestamp]
-          const vibration = [...old.vibration.slice(1), data.vibration]
-          const temperature = [...old.temperature.slice(1), data.temperature]
-          const current = [...old.current.slice(1), data.current]
-          const speed = [...old.speed.slice(1), data.speed]
-          const acoustic = [...old.acoustic.slice(1), data.acoustic]
-          deviceDataMap[deviceId] = {
-            ...old,
-            timestamps, vibration, temperature, current, speed, acoustic,
-            latest: data
-          }
-        }
-        if (data.healthScore) {
-          deviceHealthMap[deviceId] = data.healthScore
-        }
-      }
-      break
+const handleDeviceUpdate = (data) => {
+  if (!data) return
+  const deviceId = data.device_id
+  if (deviceId && deviceDataMap[deviceId]) {
+    const old = deviceDataMap[deviceId]
+    const timestamps = [...old.timestamps.slice(1), data.timestamp]
+    const vibration = [...old.vibration.slice(1), data.vibration]
+    const temperature = [...old.temperature.slice(1), data.temperature]
+    const current = [...old.current.slice(1), data.current]
+    const speed = [...old.speed.slice(1), data.speed]
+    const acoustic = [...old.acoustic.slice(1), data.acoustic]
+    deviceDataMap[deviceId] = {
+      ...old,
+      timestamps, vibration, temperature, current, speed, acoustic,
+      latest: data
     }
-    case 'rul_update': {
-      const { deviceId, data } = msg
-      if (deviceId && data) rulDataMap[deviceId] = data
-      break
+    if (data.health_score) {
+      deviceHealthMap[deviceId] = data.health_score
     }
-    case 'alert': {
-      const alert = msg.data || msg
-      const existing = alerts.value.find(a => a.id === alert.id)
-      if (!existing) {
-        alerts.value = [{ ...alert, isNew: true }, ...alerts.value]
-        setTimeout(() => {
-          const idx = alerts.value.findIndex(a => a.id === alert.id)
-          if (idx > -1) alerts.value[idx].isNew = false
-        }, 5000)
-      }
-      break
-    }
-    case 'root_cause': {
-      const { deviceId, data } = msg
-      if (deviceId && data) rootCauseMap[deviceId] = data
-      break
-    }
-    case 'pong':
-      break
   }
 }
+
+const handleRULUpdate = (data) => {
+  if (!data) return
+  const deviceId = data.device_id
+  if (deviceId) rulDataMap[deviceId] = data
+}
+
+const handleAlert = (data) => {
+  if (!data) return
+  const existing = alerts.value.find(a => a.id === data.id)
+  if (!existing) {
+    alerts.value = [{ ...data, isNew: true }, ...alerts.value]
+    setTimeout(() => {
+      const idx = alerts.value.findIndex(a => a.id === data.id)
+      if (idx > -1) alerts.value[idx].isNew = false
+    }, 5000)
+  }
+}
+
+const handleRootCause = (data) => {
+  if (!data) return
+  const deviceId = data.device_id
+  if (deviceId) rootCauseMap[deviceId] = data
+}
+
+const handlePong = () => {}
 
 const startDataSimulation = () => {
   dataTimer = setInterval(() => {
@@ -380,7 +374,11 @@ onMounted(async () => {
     }
   }
 
-  const unsubMsg = wsManager.onMessage(handleWebSocketMessage)
+  const unsubDeviceUpdate = wsManager.onMessage('device_update', handleDeviceUpdate)
+  const unsubRULUpdate = wsManager.onMessage('rul_update', handleRULUpdate)
+  const unsubAlert = wsManager.onMessage('alert', handleAlert)
+  const unsubRootCause = wsManager.onMessage('root_cause_result', handleRootCause)
+  wsManager.onMessage('pong', handlePong)
   const unsubStatus = wsManager.onStatusChange((status) => {
     wsStatus.value = status
   })
@@ -397,7 +395,10 @@ onMounted(async () => {
   alertTimer = setInterval(loadAlerts, 30000)
 
   onUnmounted(() => {
-    unsubMsg?.()
+    unsubDeviceUpdate?.()
+    unsubRULUpdate?.()
+    unsubAlert?.()
+    unsubRootCause?.()
     unsubStatus?.()
   })
 })

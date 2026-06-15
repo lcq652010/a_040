@@ -82,6 +82,28 @@ def analyze_root_cause():
                 "error": f"症状字段 {symptom} 必须是可转换为数字的值"
             }), 400
 
+    recent_series_raw = data.get("recent_series")
+    if recent_series_raw and isinstance(recent_series_raw, dict):
+        normalized_evolution = {}
+        for feature, values in recent_series_raw.items():
+            if not isinstance(values, list) or len(values) == 0:
+                continue
+            try:
+                numeric_values = [float(v) for v in values]
+            except (ValueError, TypeError):
+                continue
+            min_val = min(numeric_values)
+            max_val = max(numeric_values)
+            if max_val - min_val < 1e-9:
+                normalized_evolution[feature] = [0.5] * len(numeric_values)
+            else:
+                normalized_evolution[feature] = [
+                    round((v - min_val) / (max_val - min_val), 4)
+                    for v in numeric_values
+                ]
+        if normalized_evolution:
+            normalized_data["_evolution_data"] = normalized_evolution
+
     device_type = data["device_type"]
     device_id = data["device_id"]
 

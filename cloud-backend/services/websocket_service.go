@@ -32,14 +32,20 @@ type WebSocketHub struct {
 	register   chan *WebSocketClient
 	unregister chan *WebSocketClient
 	mu         sync.RWMutex
+
+	pendingMessages map[string][]interface{}
+	flushTimer      *time.Timer
+	flushChan       chan struct{}
 }
 
 func NewWebSocketHub() *WebSocketHub {
 	return &WebSocketHub{
-		clients:    make(map[*WebSocketClient]bool),
-		broadcast:  make(chan []byte, 256),
-		register:   make(chan *WebSocketClient),
-		unregister: make(chan *WebSocketClient),
+		clients:         make(map[*WebSocketClient]bool),
+		broadcast:       make(chan []byte, 256),
+		register:        make(chan *WebSocketClient),
+		unregister:      make(chan *WebSocketClient),
+		pendingMessages: make(map[string][]interface{}),
+		flushChan:       make(chan struct{}, 1),
 	}
 }
 
@@ -76,6 +82,9 @@ func (hub *WebSocketHub) Run() {
 				}
 			}
 			hub.mu.RUnlock()
+
+		case <-hub.flushChan:
+			hub.flushPendingMessages()
 		}
 	}
 }
@@ -157,12 +166,80 @@ func (client *WebSocketClient) writePump() {
 }
 
 func (hub *WebSocketHub) Broadcast(message *models.WebSocketMessage) {
-	jsonData, err := json.Marshal(message)
-	if err != nil {
-		log.Printf("Failed to marshal broadcast message: %v", err)
+	hub.mu.Lock()
+	hub.pendingMessages[message.Type] = append(hub.pendingMessages[message.Type], message.Data)
+
+	if hub.flushTimer == nil {
+		hub.flushTimer = time.AfterFunc(50*time.Millisecond, func() {
+			select {
+			case hub.flushChan <- struct{}{}:
+			default:
+			}
+		})
+	}
+	hub.mu.Unlock()
+}
+
+func (hub *WebSocketHub) flushPendingMessages() {
+	hub.mu.Lock()
+
+	if len(hub.pendingMessages) == 0 {
+		hub.mu.Unlock()
 		return
 	}
-	hub.broadcast <- jsonData
+
+	pending := hub.pendingMessages
+	hub.pendingMessages = make(map[string][]interface{})
+
+	if hub.flushTimer != nil {
+		hub.flushTimer.Stop()
+		hub.flushTimer = nil
+	}
+
+	hub.mu.Unlock()
+
+	for msgType, items := range pending {
+		var jsonData []byte
+		var err error
+
+		if len(items) == 1 {
+			msg := &models.WebSocketMessage{
+				Type:      msgType,
+				Data:      items[0],
+				Timestamp: time.Now(),
+			}
+			jsonData, err = json.Marshal(msg)
+		} else {
+			itemMaps := make([]map[string]interface{}, 0, len(items))
+			for _, item := range items {
+				b, mErr := json.Marshal(item)
+				if mErr != nil {
+					log.Printf("Failed to marshal pending item: %v", mErr)
+					continue
+				}
+				var m map[string]interface{}
+				if umErr := json.Unmarshal(b, &m); umErr != nil {
+					log.Printf("Failed to unmarshal pending item: %v", umErr)
+					continue
+				}
+				itemMaps = append(itemMaps, m)
+			}
+			batch := &models.BatchWebSocketMessage{
+				Type:      "batch_" + msgType,
+				Items:     itemMaps,
+				Count:     len(itemMaps),
+				Timestamp: time.Now(),
+			}
+			jsonData, err = json.Marshal(batch)
+		}
+
+		if err != nil {
+			log.Printf("Failed to marshal flush message: %v", err)
+			continue
+		}
+
+		hub.broadcast <- jsonData
+	}
 }
 
 func (hub *WebSocketHub) BroadcastDeviceUpdate(data *models.DeviceData) {

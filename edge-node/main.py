@@ -59,7 +59,8 @@ def init_detectors(devices):
     for device in devices:
         detector = IsolationForestAnomalyDetector(
             device_type=device.device_type,
-            normal_ranges=device.normal_ranges
+            normal_ranges=device.normal_ranges,
+            device_id=device.device_id
         )
         detectors[device.device_id] = detector
         logger.info(f"初始化异常检测器: {device.name}")
@@ -121,7 +122,7 @@ def main():
             try:
                 data = device.collect_data()
                 detector = detectors.get(device.device_id)
-                is_anomaly, score = detector.detect(data["values"])
+                is_anomaly, score = detector.detect(data)
 
                 data_str = format_data_log(data)
                 anomaly_str = "是" if is_anomaly else "否"
