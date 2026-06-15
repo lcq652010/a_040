@@ -1,0 +1,31 @@
+{
+  "test_config": {
+    "num_devices": 5,
+    "updates_per_device": 200,
+    "total_updates": 1000,
+    "interval_ms": 10,
+    "batch_window_ms": 50
+  },
+  "without_batching": {
+    "frames": 1000,
+    "bytes": 355044,
+    "avg_frame_size": 355.044,
+    "render_events": 1000,
+    "elapsed_seconds": 15.601088047027588
+  },
+  "with_batching": {
+    "frames": 251,
+    "bytes": 311250,
+    "avg_frame_size": 1240.0398406374502,
+    "render_events": 251,
+    "elapsed_seconds": 15.585090637207031
+  },
+  "improvements": {
+    "frame_reduction_pct": 74.9,
+    "bandwidth_reduction_pct": 12.33,
+    "render_reduction_pct": 74.9,
+    "messages_merged": 749,
+    "bandwidth_saved_bytes": 43794,
+    "render_events_reduced": 749
+  }
+}
